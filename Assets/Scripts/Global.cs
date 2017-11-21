@@ -94,10 +94,17 @@ namespace Inferno {
             yield return new WaitForEndOfFrame();
         }
 
+
+        /// <summary>
+        /// Rounds vector
+        /// </summary>
+        /// <param name="v3"></param>
+        /// <returns></returns>
         public static Vector3 RoundVector3(Vector3 v3) {
             Vector3 rVec = new Vector3(Mathf.Round(v3.x), Mathf.Round(v3.y), Mathf.Round(v3.z));
             return rVec;
         }
+
 
         public static Vector3 GridVector3(Vector3 v) {
             Vector3 vec = v;

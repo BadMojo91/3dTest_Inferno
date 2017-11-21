@@ -24,40 +24,27 @@ namespace Inferno{
                 triangles = t;
             }
         }
-
         //========================================================
         //Main functions
-
+        //========================================================
         private void Awake() {
-           // InitChunk();
-        }
-        private void Start() {
-            //InitChunk();
             surroundingChunks = new GameObject[4];
+        }
+
+        /// <summary>
+        /// Find chunks surrounding this chunk
+        /// </summary>
+        public void FindSurroundingChunks() {
             surroundingChunks[0] = GameObject.Find("Chunk_" + (chunkPosX - 1) + "," + chunkPosZ);
             surroundingChunks[1] = GameObject.Find("Chunk_" + (chunkPosX + 1) + "," + chunkPosZ);
             surroundingChunks[2] = GameObject.Find("Chunk_" + chunkPosX + "," + (chunkPosZ + 1));
             surroundingChunks[3] = GameObject.Find("Chunk_" + chunkPosX + "," + (chunkPosZ - 1));
+        }
 
-            
-            //RandomizeChunk();
-            //BuildMesh();
-            //UpdateMesh();
-            //PathMaker(20);
-            //DrawLine(new Vector3(2, 0, 2), new Vector3(30, 0, 30), true);
-            //IOChunks.SaveChunk(ConvertToChunk(blocks), "Test2");
-        }
-        public void Update() {
-            if(surroundingChunks[0] == null)
-                surroundingChunks[0] = GameObject.Find("Chunk_" + (chunkPosX - 1) + "," + chunkPosZ);
-            if(surroundingChunks[1] == null)
-                surroundingChunks[1] = GameObject.Find("Chunk_" + (chunkPosX + 1) + "," + chunkPosZ);
-            if(surroundingChunks[2] == null)
-                surroundingChunks[2] = GameObject.Find("Chunk_" + chunkPosX + "," + (chunkPosZ + 1));
-            if(surroundingChunks[3] == null)
-                surroundingChunks[3] = GameObject.Find("Chunk_" + chunkPosX + "," + (chunkPosZ - 1));
-            //UpdateMesh();
-        }
+        /// <summary>
+        /// Loads chunk in path string name
+        /// </summary>
+        /// <param name="name"></param>
         public void LoadChunk(string name) {
             Block[,] b;
             b = IOChunks.LoadChunk(name);
@@ -65,62 +52,51 @@ namespace Inferno{
             Debug.Log(blocks[0, 0].isFloor);
         }
 
+        /// <summary>
+        /// Converts chunk to binary friendly and saves to folder of string name
+        /// </summary>
+        /// <param name="name"></param>
         public void SaveChunk(string name) {
             IOChunks.SaveChunk(ConvertToChunk(blocks), name);
         }
+
         /// <summary>
         /// Initializes blocks array, and submesh.
         /// </summary>
         public void InitChunk() {
-            blocks = new Block[Global.maxChunkSize, Global.maxChunkSize];
-            StartCoroutine(Global.GatherMaterials());
+            blocks = new Block[Global.maxChunkSize, Global.maxChunkSize]; //A new beginning
+            StartCoroutine(Global.GatherMaterials()); //gathers materials for mesh renderer
             //init submeshes
+            //====================================================
             subMeshes = new SubMeshData[Global.materials.Length];
             for(int i = 0; i < subMeshes.Length; i++) {
                 subMeshes[i].triangles = new List<int>();
             }
-            //Debug.Log(subMeshes.Length);
-
+           //=====================================================
             //default chunk
+            //================================================
             for(int z = 0; z < Global.maxChunkSize; z++) {
                 for(int x = 0; x < Global.maxChunkSize; x++) {
                     blocks[x, z] = new Block(x, 0, z, defaultSubmeshes);
-                    //blocks[x, z].visible = Random.Range(0, 100) > 50 ? true : false;
                     blocks[x, z].isFloor = true;
                 }
             }
-           
+           //=================================================
         }
-        //public void RandomizeChunk() {
-        //    //First pass
-        //    for(int z = 0; z < Global.maxChunkSize; z++) {
-        //        for(int x = 0; x < Global.maxChunkSize; x++) {
-        //            float perlin = Mathf.PerlinNoise(x + (chunkPosX * 32) * seed.frequency, z + (chunkPosZ * 32) * seed.frequency) * seed.amplitude + seed.octave;
-        //            blocks[x, z].isFloor = perlin > seed.reigons[0].level ? true : false;
-        //            blocks[x, z].subMesh = defaultSubmeshes;
-                   
-        //        }
-        //    }
-        //    SecondPass();
-        //}
-
-        //public void SecondPass() {
-        //    //Second pass
-        //    for(int z = 0; z < Global.maxChunkSize; z++) {
-        //        for(int x = 0; x < Global.maxChunkSize; x++) {
-        //            if(!blocks[x, z].isFloor) {
-        //                int[] s = seed.reigons[0].subMeshes;
-        //                SetSurroundingBlocks(x, z, s[2], s[3], s[4], s[5]);
-
-                        
-        //            }
-        //        }
-        //    }
-        //}
+        
+        /// <summary>
+        /// Random number between 0 and maxChunkSize
+        /// </summary>
+        /// <returns></returns>
         int Rand() {
             int r = Random.Range(0, Global.maxChunkSize);
             return r;
         }
+
+        /// <summary>
+        /// Random path maker, single file, rejoins back to first node
+        /// </summary>
+        /// <param name="pathCount"></param>
         public void PathMaker(int pathCount) {
             List<Vector3> paths = new List<Vector3>();
             for(int i = 0; i < pathCount; i++) {
@@ -137,6 +113,12 @@ namespace Inferno{
             }
         }
         
+        /// <summary>
+        /// Draws a line in the chunk
+        /// </summary>
+        /// <param name="pos1"></param>
+        /// <param name="pos2"></param>
+        /// <param name="isFloor"></param>
         public void DrawLine(Vector3 pos1, Vector3 pos2, bool isFloor) {
             pos1 = Global.GridVector3(pos1);
             pos2 = Global.GridVector3(pos2);
@@ -153,37 +135,27 @@ namespace Inferno{
             BuildMesh();
             UpdateMesh();
         }
+
+        /// <summary>
+        /// Remove block at
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="z"></param>
         public void RemoveAt(int x, int z) {
             if(x < Global.maxChunkSize && x >= 0 && z < Global.maxChunkSize && z >= 0)
                 blocks[x, z].isFloor = true;
         }
+
         /// <summary>
-        /// Sets each face's submesh surrounding non-visible block
+        /// Returns the submesh array for the 4 walls of a cube
         /// </summary>
-        /// <param name="x"></param>
-        /// <param name="z"></param>
-        /// <param name="s"></param>
-        //public void SetSurroundingBlocks(int x, int z, int s) {
-        //    SetSurroundingBlocks(x, z, s, s, s, s);
-        //}
-        //public void SetSurroundingBlocks(int x, int z, int left, int right, int front, int back) {
-        //    if(x + 1 < Global.maxChunkSize && blocks[x + 1, z].isFloor) {
-        //        int[] sub = blocks[x + 1, z].subMesh;
-        //        blocks[x + 1, z].subMesh = CubeMaterial(sub[0], sub[1], left, sub[3], sub[4], sub[5]);
-        //    }
-        //    if(x - 1 >= 0 && blocks[x - 1, z].isFloor) {
-        //        int[] sub = blocks[x - 1, z].subMesh;
-        //        blocks[x - 1, z].subMesh = CubeMaterial(sub[0], sub[1], sub[2], right, sub[4], sub[5]);
-        //    }
-        //    if(z + 1 < Global.maxChunkSize && blocks[x, z + 1].isFloor) {
-        //        int[] sub = blocks[x, z + 1].subMesh;
-        //        blocks[x, z + 1].subMesh = CubeMaterial(sub[0], sub[1], sub[2], sub[3], front, sub[5]);
-        //    }
-        //    if(z - 1 >= 0 && blocks[x, z - 1].isFloor) {
-        //        int[] sub = blocks[x, z - 1].subMesh;
-        //        blocks[x, z - 1].subMesh = CubeMaterial(sub[0], sub[1], sub[2], sub[3], sub[4], back);
-        //    }
-        //}
+        /// <param name="up"></param>
+        /// <param name="down"></param>
+        /// <param name="left"></param>
+        /// <param name="right"></param>
+        /// <param name="front"></param>
+        /// <param name="back"></param>
+        /// <returns></returns>
         public int[] CubeMaterial(int up, int down, int left, int right, int front, int back) {
             int[] cMat = new int[6];
             cMat[0] = up;
@@ -195,6 +167,7 @@ namespace Inferno{
 
             return cMat;
         }
+
         /// <summary>
         /// Sets block submesh in blocks array
         /// </summary>
@@ -206,7 +179,6 @@ namespace Inferno{
                 return;
 
             blocks[x, z].isFloor = v;
-            //SetSurroundingBlocks(x, z, 6);
             blocks = Global.SecondPass(seed, blocks);
             BuildMesh();
             UpdateMesh();
@@ -367,7 +339,7 @@ namespace Inferno{
                     AddTriangles(s);
                 }
                 else if(face == CubeFace.left) {
-                    if(posX - 1 < 0 || !blocks[posX - 1, posZ].isFloor) {
+                    if((posX - 1 < 0 && surroundingChunks[0] == null) || !blocks[posX - 1, posZ].isFloor) {
                         vertices.Add(new Vector3(x, y, z));
                         vertices.Add(new Vector3(x, y + 1, z));
                         vertices.Add(new Vector3(x, y + 1, z + 1));

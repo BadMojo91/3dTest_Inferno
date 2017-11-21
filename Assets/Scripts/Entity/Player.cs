@@ -9,10 +9,9 @@ namespace Inferno {
         public Global.Compass CurrentDirection {
             get { return currentDirection; }
         }
-
+        public bool lockMouse;
         public float health = 100;
         public float armor = 0;
-
         private float moveSpeed;
         public float MoveSpeed{
             get { return moveSpeed; }
@@ -68,6 +67,18 @@ namespace Inferno {
         }
         
         private void PlayerUpdate() {
+            if(lockMouse) {
+                Cursor.lockState = CursorLockMode.Locked;
+            }
+            else
+                Cursor.lockState = CursorLockMode.None;
+
+            if(Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.G)) {
+                if(lockMouse)
+                    lockMouse = false;
+                else
+                    lockMouse = true;
+            }
             //Platform NO/G
             if(Global.GameType == 0) { }
             //Platform WITH/G
@@ -137,7 +148,11 @@ namespace Inferno {
 
             }
             //2.5d WOLF
-            if(Global.GameType == 3) { }
+            if(Global.GameType == 3) {
+                if(Input.GetButton("Fire1"))
+                    Interact(true);
+                GB3DMovement.MoveUpdate(transform, maxMoveSpeed, turnSpeed);
+            }
             //3d
             if(Global.GameType == 4) { }
             //flight

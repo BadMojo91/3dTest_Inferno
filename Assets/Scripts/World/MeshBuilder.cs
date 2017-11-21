@@ -5,17 +5,17 @@ using UnityEngine;
 namespace Inferno{
     [RequireComponent(typeof(MeshFilter)), RequireComponent(typeof(MeshRenderer)), RequireComponent(typeof(MeshCollider))]
     public class MeshBuilder : MonoBehaviour {
-        public Block[,] blocks = new Block[Global.maxChunkSize,Global.maxChunkSize];
+        //public Block[,] blocks = new Block[Global.maxChunkSize,Global.maxChunkSize];
         public Chunk currentChunk;
         private SubMeshData[] subMeshes;
-        private MeshFilter meshFilter;
-        private MeshRenderer meshRenderer;
-        private MeshCollider meshCollider;
+        public MeshFilter meshFilter;
+        public MeshRenderer meshRenderer;
+        public MeshCollider meshCollider;
         public int chunkPosX,chunkPosZ;
         static int[] defaultSubmeshes = { 0, 9, 2, 3, 4, 5 };
         [SerializeField]public WorldSeed seed;
         public GameObject[] surroundingChunks;
-       
+        
         //========================================================
         [System.Serializable]
         public struct SubMeshData {
@@ -27,18 +27,19 @@ namespace Inferno{
         //========================================================
         //Main functions
         //========================================================
-        private void Awake() {
-            surroundingChunks = new GameObject[4];
-        }
-
         /// <summary>
         /// Find chunks surrounding this chunk
         /// </summary>
         public void FindSurroundingChunks() {
+            surroundingChunks = new GameObject[4];
+            if(GameObject.Find("Chunk_" + (chunkPosX - 1) + "," + chunkPosZ))
             surroundingChunks[0] = GameObject.Find("Chunk_" + (chunkPosX - 1) + "," + chunkPosZ);
-            surroundingChunks[1] = GameObject.Find("Chunk_" + (chunkPosX + 1) + "," + chunkPosZ);
-            surroundingChunks[2] = GameObject.Find("Chunk_" + chunkPosX + "," + (chunkPosZ + 1));
-            surroundingChunks[3] = GameObject.Find("Chunk_" + chunkPosX + "," + (chunkPosZ - 1));
+            if(GameObject.Find("Chunk_" + (chunkPosX + 1) + "," + chunkPosZ))
+                surroundingChunks[1] = GameObject.Find("Chunk_" + (chunkPosX + 1) + "," + chunkPosZ);
+            if(GameObject.Find("Chunk_" + chunkPosX + "," + (chunkPosZ + 1)))
+                surroundingChunks[2] = GameObject.Find("Chunk_" + chunkPosX + "," + (chunkPosZ + 1));
+            if(GameObject.Find("Chunk_" + chunkPosX + "," + (chunkPosZ - 1)))
+                surroundingChunks[3] = GameObject.Find("Chunk_" + chunkPosX + "," + (chunkPosZ - 1));
         }
 
         /// <summary>
@@ -48,8 +49,8 @@ namespace Inferno{
         public void LoadChunk(string name) {
             Block[,] b;
             b = IOChunks.LoadChunk(name);
-            blocks = b;
-            Debug.Log(blocks[0, 0].isFloor);
+            currentChunk.blocks2 = b;
+            //Debug.Log(blocks[0, 0].isFloor);
         }
 
         /// <summary>
@@ -57,31 +58,19 @@ namespace Inferno{
         /// </summary>
         /// <param name="name"></param>
         public void SaveChunk(string name) {
-            IOChunks.SaveChunk(ConvertToChunk(blocks), name);
+            //currentChunk = ConvertToChunk(currentChunk.blocks2);
+            IOChunks.SaveChunk(currentChunk, name);
         }
 
         /// <summary>
         /// Initializes blocks array, and submesh.
         /// </summary>
         public void InitChunk() {
-            blocks = new Block[Global.maxChunkSize, Global.maxChunkSize]; //A new beginning
-            StartCoroutine(Global.GatherMaterials()); //gathers materials for mesh renderer
+            //blocks = new Block[Global.maxChunkSize, Global.maxChunkSize]; //A new beginning
+            //StartCoroutine(Global.GatherMaterials()); //gathers materials for mesh renderer
             //init submeshes
             //====================================================
-            subMeshes = new SubMeshData[Global.materials.Length];
-            for(int i = 0; i < subMeshes.Length; i++) {
-                subMeshes[i].triangles = new List<int>();
-            }
-           //=====================================================
-            //default chunk
-            //================================================
-            for(int z = 0; z < Global.maxChunkSize; z++) {
-                for(int x = 0; x < Global.maxChunkSize; x++) {
-                    blocks[x, z] = new Block(x, 0, z, defaultSubmeshes);
-                    blocks[x, z].isFloor = true;
-                }
-            }
-           //=================================================
+            currentChunk = Global.GetChunk(chunkPosX, chunkPosZ);
         }
         
         /// <summary>
@@ -142,8 +131,11 @@ namespace Inferno{
         /// <param name="x"></param>
         /// <param name="z"></param>
         public void RemoveAt(int x, int z) {
-            if(x < Global.maxChunkSize && x >= 0 && z < Global.maxChunkSize && z >= 0)
-                blocks[x, z].isFloor = true;
+            if(x < Global.maxChunkSize && x >= 0 && z < Global.maxChunkSize && z >= 0) 
+            currentChunk.blocks2[x, z].isFloor = true;
+   
+            BuildMesh();
+            UpdateMesh();
         }
 
         /// <summary>
@@ -175,20 +167,14 @@ namespace Inferno{
         /// <param name="z">position z</param>
         /// <param name="s">Submesh for each face (up, down, left, right, front, back)</param> 
         public void SetBlock(int x, int z, bool v) {
-            if(blocks == null)
-                return;
-
-            blocks[x, z].isFloor = v;
-            blocks = Global.SecondPass(seed, blocks);
+            currentChunk.blocks2[x, z].isFloor = v;
+            currentChunk.blocks2 = Global.SecondPass(seed, currentChunk.blocks2);
             BuildMesh();
             UpdateMesh();
 
         }
 
-        /// <summary>
-        /// Builds mesh from blocks array
-        /// </summary>
-        public void BuildMesh() {
+        private void Cleanup() {
             count = 0;
             foreach(SubMeshData i in subMeshes) {
                 i.triangles.Clear();
@@ -198,24 +184,34 @@ namespace Inferno{
             colVertices.Clear();
             colTriangles.Clear();
             uvs.Clear();
-           // Debug.Log(chunkPosX + " " + chunkPosZ);
-            blocks = Global.chunks[chunkPosX, chunkPosZ].blocks2;
+        }
+
+        /// <summary>
+        /// Builds mesh from blocks array
+        /// </summary>
+        public void BuildMesh() {
+            subMeshes = new SubMeshData[Global.materials.Length];
+            for(int i = 0; i < subMeshes.Length; i++) {
+                subMeshes[i].triangles = new List<int>();
+            }
+            //Debug.Log(chunkPosX + " " + chunkPosZ);
+            //currentChunk = Global.GetChunk(chunkPosX, chunkPosZ);
             for(int z = 0; z < Global.maxChunkSize; z++) {
                 for(int x = 0; x < Global.maxChunkSize; x++) {
-                    CreateCube(x, 0, z, blocks[x, z].subMesh);
-                    
+                //Debug.Log(currentChunk.blocks2[x,z].subMesh.Length);
+                    CreateCube(x, 0, z, currentChunk.blocks2[x, z].subMesh);
                 }
             }
-            //UpdateMesh();
         }
         /// <summary>
         /// Updates mesh, run after BuildMesh.
         /// </summary>
         public void UpdateMesh() {
-            meshFilter = GetComponent<MeshFilter>();
-            meshRenderer = GetComponent<MeshRenderer>();
-            meshCollider = GetComponent<MeshCollider>();
+            if(vertices == null || colVertices == null)
+                return;
             Mesh mesh = new Mesh();
+            Mesh colMesh = new Mesh();
+
             mesh.Clear();
             mesh.subMeshCount = subMeshes.Length;
             mesh.vertices = vertices.ToArray();
@@ -224,29 +220,19 @@ namespace Inferno{
             }
             mesh.uv = uvs.ToArray();
             mesh.RecalculateNormals();
-            meshRenderer.sharedMaterials = Global.materials;
             meshFilter.sharedMesh = mesh;
 
-            Mesh colMesh = new Mesh();
             colMesh.Clear();
             colMesh.vertices = colVertices.ToArray();
             colMesh.triangles = colTriangles.ToArray();
             meshCollider.sharedMesh = colMesh;
 
-            count = 0;
-            foreach(SubMeshData i in subMeshes) {
-                i.triangles.Clear();
-            }
-            vertices.Clear();
-            triangles.Clear();
-            colVertices.Clear();
-            colTriangles.Clear();
-            uvs.Clear();
 
-            currentChunk = ConvertToChunk(blocks);
-  
+            Cleanup();
+            
         }
         private void CreateCube(int x, int y, int z, int[] s) {
+           // Debug.Log("Got to here at least");
             AddVerts(x, y, z, s[0], CubeFace.up);
             AddVerts(x, y, z, s[1], CubeFace.down);
             AddVerts(x, y, z, s[2], CubeFace.left);
@@ -268,7 +254,8 @@ namespace Inferno{
                     _chunk[i] = c[x, z];
                 }
             }
-            Chunk newChunk = new Chunk(_chunk);
+            Chunk newChunk = new Chunk(c);
+            newChunk.blocks = _chunk;
             return newChunk;
         }
         //========================================================
@@ -309,144 +296,121 @@ namespace Inferno{
         private void AddVerts(float x, float y, float z, int s, CubeFace face) {
             int posX = (int)x;
             int posZ = (int)z;
+            if(currentChunk.blocks2[posX, posZ].damage <= 0)
+                return;
            // GameObject c = null;
             x -= 0.5f; //sets the offsets here, better that way.
             z -= 0.5f;
             y -= 0.5f;
-            if(blocks[posX, posZ].isFloor) {
+            if(currentChunk.blocks2[posX, posZ].isFloor) {
                 if(face == CubeFace.up) {
-                    vertices.Add(new Vector3(x, y + 1, z));
-                    vertices.Add(new Vector3(x + 1, y + 1, z));
-                    vertices.Add(new Vector3(x + 1, y + 1, z + 1));
-                    vertices.Add(new Vector3(x, y + 1, z + 1));
-
-                    colVertices.Add(new Vector3(x, y + 1, z));
-                    colVertices.Add(new Vector3(x + 1, y + 1, z));
-                    colVertices.Add(new Vector3(x + 1, y + 1, z + 1));
-                    colVertices.Add(new Vector3(x, y + 1, z + 1));
-                    AddTriangles(s);
+                    AddVertsUp(x, y, z, s);
                 }
                 else if(face == CubeFace.down) {
-                    vertices.Add(new Vector3(x, y, z));
-                    vertices.Add(new Vector3(x, y, z + 1));
-                    vertices.Add(new Vector3(x + 1, y, z + 1));
-                    vertices.Add(new Vector3(x + 1, y, z));
-
-                    colVertices.Add(new Vector3(x, y, z));
-                    colVertices.Add(new Vector3(x, y, z + 1));
-                    colVertices.Add(new Vector3(x + 1, y, z + 1));
-                    colVertices.Add(new Vector3(x + 1, y, z));
-                    AddTriangles(s);
+                    AddVertsDown(x, y, z, s);
                 }
                 else if(face == CubeFace.left) {
-                    if((posX - 1 < 0 && surroundingChunks[0] == null) || !blocks[posX - 1, posZ].isFloor) {
-                        vertices.Add(new Vector3(x, y, z));
-                        vertices.Add(new Vector3(x, y + 1, z));
-                        vertices.Add(new Vector3(x, y + 1, z + 1));
-                        vertices.Add(new Vector3(x, y, z + 1));
-
-                        colVertices.Add(new Vector3(x, y, z));
-                        colVertices.Add(new Vector3(x, y + 1, z));
-                        colVertices.Add(new Vector3(x, y + 1, z + 1));
-                        colVertices.Add(new Vector3(x, y, z + 1));
-                        AddTriangles(s);
-                    }
+                    if((posX - 1 >= 0 && !currentChunk.blocks2[posX - 1, posZ].isFloor) || (posX - 1 < 0 && surroundingChunks[0] == null))
+                        AddVertsLeft(x, y, z, s); 
                 }
                 else if(face == CubeFace.right) {
-                    if(posX + 1 > Global.maxChunkSize - 1 || !blocks[posX + 1, posZ].isFloor) {
-                        vertices.Add(new Vector3(x + 1, y, z + 1));
-                        vertices.Add(new Vector3(x + 1, y + 1, z + 1));
-                        vertices.Add(new Vector3(x + 1, y + 1, z));
-                        vertices.Add(new Vector3(x + 1, y, z));
-
-                        colVertices.Add(new Vector3(x + 1, y, z + 1));
-                        colVertices.Add(new Vector3(x + 1, y + 1, z + 1));
-                        colVertices.Add(new Vector3(x + 1, y + 1, z));
-                        colVertices.Add(new Vector3(x + 1, y, z));
-                        AddTriangles(s);
-                    }
+                    if((posX + 1 < Global.maxChunkSize - 1 && !currentChunk.blocks2[posX + 1, posZ].isFloor) || (posX + 1 >= Global.maxChunkSize && surroundingChunks[1] == null))
+                        AddVertsRight(x, y, z, s);
+                    
                     
                 }
                 else if(face == CubeFace.front) {
-                    if(posZ - 1 < 0 || !blocks[posX, posZ - 1].isFloor) {
-                        vertices.Add(new Vector3(x + 1, y, z));
-                        vertices.Add(new Vector3(x + 1, y + 1, z));
-                        vertices.Add(new Vector3(x, y + 1, z));
-                        vertices.Add(new Vector3(x, y, z));
-
-                        colVertices.Add(new Vector3(x + 1, y, z));
-                        colVertices.Add(new Vector3(x + 1, y + 1, z));
-                        colVertices.Add(new Vector3(x, y + 1, z));
-                        colVertices.Add(new Vector3(x, y, z));
-                        AddTriangles(s);
+                    if(posZ - 1 >= 0 && currentChunk.blocks2[posX, posZ - 1].isFloor == false) {// || (posZ - 1 < 0 && (surroundingChunks[2] == null || !surroundingChunks[2].GetComponent<MeshBuilder>().currentChunk.blocks2[posX, 0].isFloor))) {
+                        AddVertsFront(x, y, z, s);
                     }
                 }
                 else if(face == CubeFace.back) {
-                    if(posZ + 1 > Global.maxChunkSize - 1 || !blocks[posX, posZ + 1].isFloor) {
-                        vertices.Add(new Vector3(x, y, z + 1));
-                        vertices.Add(new Vector3(x, y + 1, z + 1));
-                        vertices.Add(new Vector3(x + 1, y + 1, z + 1));
-                        vertices.Add(new Vector3(x + 1, y, z + 1));
-
-                        colVertices.Add(new Vector3(x, y, z + 1));
-                        colVertices.Add(new Vector3(x, y + 1, z + 1));
-                        colVertices.Add(new Vector3(x + 1, y + 1, z + 1));
-                        colVertices.Add(new Vector3(x + 1, y, z + 1));
-                        AddTriangles(s);
+                    if(posZ + 1 < Global.maxChunkSize - 1 && !currentChunk.blocks2[posX, posZ + 1].isFloor){ //|| (posZ + 1 >= Global.maxChunkSize && (surroundingChunks[3] == null || !surroundingChunks[3].GetComponent<MeshBuilder>().currentChunk.blocks2[posX, Global.maxChunkSize - 1].isFloor))) {
+                        AddVertsBack(x, y, z, s);
                     }
                 }
             }
         }
-        //========================================================
+
+        private void AddVertsLeft(float x, float y, float z, int s) {
+           
+                vertices.Add(new Vector3(x, y, z));
+                vertices.Add(new Vector3(x, y + 1, z));
+                vertices.Add(new Vector3(x, y + 1, z + 1));
+                vertices.Add(new Vector3(x, y, z + 1));
+
+                colVertices.Add(new Vector3(x, y, z));
+                colVertices.Add(new Vector3(x, y + 1, z));
+                colVertices.Add(new Vector3(x, y + 1, z + 1));
+                colVertices.Add(new Vector3(x, y, z + 1));
+                AddTriangles(s);
+            }
+        private void AddVertsRight(float x, float y, float z, int s) {
+
+            vertices.Add(new Vector3(x + 1, y, z + 1));
+            vertices.Add(new Vector3(x + 1, y + 1, z + 1));
+            vertices.Add(new Vector3(x + 1, y + 1, z));
+            vertices.Add(new Vector3(x + 1, y, z));
+
+            colVertices.Add(new Vector3(x + 1, y, z + 1));
+            colVertices.Add(new Vector3(x + 1, y + 1, z + 1));
+            colVertices.Add(new Vector3(x + 1, y + 1, z));
+            colVertices.Add(new Vector3(x + 1, y, z));
+            AddTriangles(s);
+        }
+        private void AddVertsFront(float x, float y, float z, int s) {
+
+            vertices.Add(new Vector3(x + 1, y, z));
+            vertices.Add(new Vector3(x + 1, y + 1, z));
+            vertices.Add(new Vector3(x, y + 1, z));
+            vertices.Add(new Vector3(x, y, z));
+
+            colVertices.Add(new Vector3(x + 1, y, z));
+            colVertices.Add(new Vector3(x + 1, y + 1, z));
+            colVertices.Add(new Vector3(x, y + 1, z));
+            colVertices.Add(new Vector3(x, y, z));
+            AddTriangles(s);
+        }
+        private void AddVertsBack(float x, float y, float z, int s) {
+
+            vertices.Add(new Vector3(x, y, z + 1));
+            vertices.Add(new Vector3(x, y + 1, z + 1));
+            vertices.Add(new Vector3(x + 1, y + 1, z + 1));
+            vertices.Add(new Vector3(x + 1, y, z + 1));
+
+            colVertices.Add(new Vector3(x, y, z + 1));
+            colVertices.Add(new Vector3(x, y + 1, z + 1));
+            colVertices.Add(new Vector3(x + 1, y + 1, z + 1));
+            colVertices.Add(new Vector3(x + 1, y, z + 1));
+            AddTriangles(s);
+        }
+        private void AddVertsUp(float x, float y, float z, int s) {
+
+            vertices.Add(new Vector3(x, y + 1, z));
+            vertices.Add(new Vector3(x + 1, y + 1, z));
+            vertices.Add(new Vector3(x + 1, y + 1, z + 1));
+            vertices.Add(new Vector3(x, y + 1, z + 1));
+
+            colVertices.Add(new Vector3(x, y + 1, z));
+            colVertices.Add(new Vector3(x + 1, y + 1, z));
+            colVertices.Add(new Vector3(x + 1, y + 1, z + 1));
+            colVertices.Add(new Vector3(x, y + 1, z + 1));
+            AddTriangles(s);
+        }
+        private void AddVertsDown(float x, float y, float z, int s) {
+
+            vertices.Add(new Vector3(x, y, z));
+            vertices.Add(new Vector3(x, y, z + 1));
+            vertices.Add(new Vector3(x + 1, y, z + 1));
+            vertices.Add(new Vector3(x + 1, y, z));
+
+            colVertices.Add(new Vector3(x, y, z));
+            colVertices.Add(new Vector3(x, y, z + 1));
+            colVertices.Add(new Vector3(x + 1, y, z + 1));
+            colVertices.Add(new Vector3(x + 1, y, z));
+            AddTriangles(s);
+        }
+        //=====end of class
     }
-    /*
-//Right
-                    if(x + 1 < Global.maxChunkSize && !blocks[x + 1, z].visible) {
-                        if(x + 2 < Global.maxChunkSize && blocks[x + 2, z].visible) {
-                            blocks[x, z].subMesh = CubeMaterial(13,1,2,6,4,5);
-                            blocks[x + 2, z].subMesh = CubeMaterial(13, 1, 6, 3, 4, 5);
-                            if(z+1 < Global.maxChunkSize)
-                                blocks[x + 1, z + 1].subMesh = CubeMaterial(13, 1, 2, 3, 6, 5);
-                            if(z - 1 > 0)
-                                blocks[x + 1, z - 1].subMesh = CubeMaterial(13, 1, 2, 3, 4, 6);
-                        }
-                    }
-                    //Left
-                    if(x - 1 > 0 && !blocks[x - 1, z].visible) {
-                        if(x - 2 < 0 && blocks[x - 2, z].visible) {
-                            blocks[x, z].subMesh = CubeMaterial(13, 1, 6, 3, 4, 5);
-                            blocks[x - 2, z].subMesh = CubeMaterial(13, 1, 2, 6, 4, 5);
-                            if(z + 1 < Global.maxChunkSize)
-                                blocks[x - 1, z + 1].subMesh = CubeMaterial(13, 1, 2, 3, 4, 6);
-                            if(z - 1 > 0)
-                                blocks[x - 1, z - 1].subMesh = CubeMaterial(13, 1, 2, 3, 6, 5);
-                        }
-                    }
-                    //Forward
-                    if(z + 1 < Global.maxChunkSize && !blocks[x, z + 1].visible) {
-                        if(z + 2 < Global.maxChunkSize && blocks[x, z + 2].visible) {
-                            blocks[x, z].subMesh = CubeMaterial(13, 1, 2, 3, 4, 6);
-                            blocks[x, z + 2].subMesh = CubeMaterial(13, 1, 2, 3, 6, 5);
-                            if(x + 1 < Global.maxChunkSize)
-                                blocks[x + 1, z + 1].subMesh = CubeMaterial(13, 1, 2, 3, 6, 5);
-                            if(x - 1 > 0)
-                                blocks[x - 1, z + 1].subMesh = CubeMaterial(13, 1, 2, 3, 4, 6);
-                        }
-                    }
-                    //Back
-                    if(z - 1 > 0 && !blocks[x, z -1].visible) {
-                        if(z - 2 < 0 && blocks[x, z-2].visible) {
-                            blocks[x, z].subMesh = CubeMaterial(13, 1, 2, 3, 6, 5);
-                            blocks[x, z - 1].subMesh = CubeMaterial(13, 1, 3, 3, 4, 6);
-                            if(x + 1 < Global.maxChunkSize)
-                                blocks[x + 1, z - 1].subMesh = CubeMaterial(13, 1, 2, 3, 6, 5);
-                            if(x - 1 > 0)
-                                blocks[x - 1, z - 1].subMesh = CubeMaterial(13, 1, 2, 3, 4, 6);
-                        }
-                    }
-
- */
-
 }
-
-
+  

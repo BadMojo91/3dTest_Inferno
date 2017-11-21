@@ -8,6 +8,11 @@ namespace Inferno {
         public byte gameType;
         public GameObject inventoryView;
         public GameObject pickupPrefab;
+
+        public void Start() {
+            StartCoroutine(Global.GatherMaterials());
+        }
+
         private void Update() {
             if(Global.GameType != gameType) {
                 Global.GameType = gameType;

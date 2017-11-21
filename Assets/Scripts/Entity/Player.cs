@@ -67,6 +67,7 @@ namespace Inferno {
         }
         
         private void PlayerUpdate() {
+            currentPosition = Global.RoundVector3(transform.position);
             if(lockMouse) {
                 Cursor.lockState = CursorLockMode.Locked;
             }
@@ -201,8 +202,8 @@ namespace Inferno {
                             z += Global.maxChunkSize;
                             cPosZ -= 1;
                         }
-                        Debug.Log(x + "," + z);
-                        Debug.DrawLine(transform.position, new Vector3(x, 0, z), Color.red, 5);
+                        //Debug.Log(x + "," + z);
+                       // Debug.DrawLine(transform.position, new Vector3(x, 0, z), Color.red, 5);
                         if(x >= 0 && x < Global.maxChunkSize && z >= 0 && z < Global.maxChunkSize)
                             hit.collider.GetComponent<MeshBuilder>().SetBlock(x, z, removeBlock);
                     }

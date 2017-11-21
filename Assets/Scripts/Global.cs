@@ -10,7 +10,7 @@ namespace Inferno {
         public static int maxChunkSize = 32;
         public static Material[] materials;
         public enum Compass { North, South, East, West };
-        public static Chunk[,] chunks;
+        public static List<Chunk> chunks;
         public static bool uiActive = false;
         public static GameObject activeUi;
         private static byte gameType = 2;
@@ -150,12 +150,12 @@ namespace Inferno {
             }
             return bl;
         }
-        public static Block[,] RandomizeChunk(WorldSeed seed) {
+        public static Block[,] RandomizeChunk(WorldSeed seed, int offSetX, int offSetZ) {
             Block[,] blocks = new Block[maxChunkSize, maxChunkSize];
             //First pass
             for(int z = 0; z < maxChunkSize; z++) {
                 for(int x = 0; x < maxChunkSize; x++) {
-                    float perlin = Mathf.PerlinNoise(x * seed.frequency, z * seed.frequency) * seed.amplitude + seed.octave;
+                    float perlin = Mathf.PerlinNoise(x * seed.frequency + offSetX, z * seed.frequency + offSetZ) * seed.amplitude + seed.octave;
                     blocks[x, z] = new Block(x, 0, z, CubeMaterial(0, 1, 2, 3, 4, 5));
                     blocks[x, z].isFloor = perlin > seed.reigons[0].level ? true : false;
 
@@ -182,14 +182,33 @@ namespace Inferno {
         }
 
         public static void SetChunks(int count, WorldSeed seed) {
-            chunks = new Chunk[count, count];
-            for(int x = 0; x < count; x++) {
-                for(int z = 0; z < count; z++) {
-                    chunks[x, z] = new Chunk(RandomizeChunk(seed));
+            chunks = new List<Chunk>();
+            Global.chunks.Clear();
+            for(int x = -count; x < count; x++) {
+                for(int z = -count; z < count; z++) {
+                    Chunk newChunk = new Chunk(RandomizeChunk(seed,x,z));
+                    newChunk.x = x;
+                    newChunk.z = z;
+                    chunks.Add(newChunk);
                     //chunks[x, z].blocks2 = RandomizeChunk(seed);
                 }
             }
-           // Debug.Log(chunks[5,5].blocks2.Length);
+           
+        }
+
+        public static Chunk GetChunk(int posX, int posZ) {
+            Chunk c = null;
+
+            for(int i = 0; i < chunks.Count; i++) {
+                if(chunks[i].x == posX && chunks[i].z == posZ) {
+                    c = chunks[i];
+                    break;
+                }
+            }
+            if(c == null)
+                Debug.LogError("No Chunk Found" + posX + " " + posZ);
+
+            return c;
         }
     }
     

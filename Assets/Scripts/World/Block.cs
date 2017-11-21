@@ -10,6 +10,7 @@ namespace Inferno {
         public int posZ;
         public int posY;
         public bool isFloor;
+        public float damage;
         /// <summary>
         /// Block(x, y, z, submesh)
         /// </summary>
@@ -22,6 +23,15 @@ namespace Inferno {
             posY = y;
             posZ = z;
             subMesh = s;
+            damage = 100;
+        }
+
+        public Block(int x, int y, int z, int[] s, float d) {
+            posX = x;
+            posY = y;
+            posZ = z;
+            subMesh = s;
+            damage = d;
         }
     }
 }

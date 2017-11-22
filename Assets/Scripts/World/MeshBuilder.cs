@@ -36,10 +36,10 @@ namespace Inferno{
             surroundingChunks[0] = GameObject.Find("Chunk_" + (chunkPosX - 1) + "," + chunkPosZ);
             if(GameObject.Find("Chunk_" + (chunkPosX + 1) + "," + chunkPosZ))
                 surroundingChunks[1] = GameObject.Find("Chunk_" + (chunkPosX + 1) + "," + chunkPosZ);
-            if(GameObject.Find("Chunk_" + chunkPosX + "," + (chunkPosZ + 1)))
-                surroundingChunks[2] = GameObject.Find("Chunk_" + chunkPosX + "," + (chunkPosZ + 1));
             if(GameObject.Find("Chunk_" + chunkPosX + "," + (chunkPosZ - 1)))
-                surroundingChunks[3] = GameObject.Find("Chunk_" + chunkPosX + "," + (chunkPosZ - 1));
+                surroundingChunks[2] = GameObject.Find("Chunk_" + chunkPosX + "," + (chunkPosZ - 1));
+            if(GameObject.Find("Chunk_" + chunkPosX + "," + (chunkPosZ + 1)))
+                surroundingChunks[3] = GameObject.Find("Chunk_" + chunkPosX + "," + (chunkPosZ + 1));
         }
 
         /// <summary>
@@ -310,24 +310,37 @@ namespace Inferno{
                     AddVertsDown(x, y, z, s);
                 }
                 else if(face == CubeFace.left) {
-                    if((posX - 1 >= 0 && !currentChunk.blocks2[posX - 1, posZ].isFloor) || (posX - 1 < 0 && surroundingChunks[0] == null))
+                    if(posX - 1 >= 0 && currentChunk.blocks2[posX - 1, posZ].isFloor == false)
+                        AddVertsLeft(x, y, z, s);
+                    else if (posX - 1 < 0 && surroundingChunks[0] == null)
+                        AddVertsLeft(x, y, z, s);
+                    else if (posX - 1 < 0 && surroundingChunks[0] != null && Global.GetChunk(chunkPosX - 1, chunkPosZ).blocks2[Global.maxChunkSize - 1,posZ].isFloor == false)
                         AddVertsLeft(x, y, z, s); 
                 }
                 else if(face == CubeFace.right) {
-                    if((posX + 1 < Global.maxChunkSize - 1 && !currentChunk.blocks2[posX + 1, posZ].isFloor) || (posX + 1 >= Global.maxChunkSize && surroundingChunks[1] == null))
+                    if(posX + 1 < Global.maxChunkSize && currentChunk.blocks2[posX + 1, posZ].isFloor == false)
                         AddVertsRight(x, y, z, s);
-                    
+                    else if (posX + 1 == Global.maxChunkSize && surroundingChunks[1] == null)
+                        AddVertsRight(x, y, z, s);
+                    else if(surroundingChunks[1] != null && posX + 1 == Global.maxChunkSize && Global.GetChunk(chunkPosX + 1, chunkPosZ).blocks2[0, posZ].isFloor == false)
+                        AddVertsRight(x, y, z, s);
                     
                 }
                 else if(face == CubeFace.front) {
-                    if(posZ - 1 >= 0 && currentChunk.blocks2[posX, posZ - 1].isFloor == false) {// || (posZ - 1 < 0 && (surroundingChunks[2] == null || !surroundingChunks[2].GetComponent<MeshBuilder>().currentChunk.blocks2[posX, 0].isFloor))) {
+                    if(posZ - 1 >= 0 && currentChunk.blocks2[posX, posZ - 1].isFloor == false)
                         AddVertsFront(x, y, z, s);
-                    }
+                    else if (posZ - 1 < 0 && surroundingChunks[2] == null)
+                        AddVertsFront(x, y, z, s);
+                    else if (surroundingChunks[2] != null && posZ - 1 < 0 && Global.GetChunk(chunkPosX, chunkPosZ - 1).blocks2[posX, Global.maxChunkSize - 1].isFloor == false)
+                        AddVertsFront(x, y, z, s);
                 }
                 else if(face == CubeFace.back) {
-                    if(posZ + 1 < Global.maxChunkSize - 1 && !currentChunk.blocks2[posX, posZ + 1].isFloor){ //|| (posZ + 1 >= Global.maxChunkSize && (surroundingChunks[3] == null || !surroundingChunks[3].GetComponent<MeshBuilder>().currentChunk.blocks2[posX, Global.maxChunkSize - 1].isFloor))) {
+                    if(posZ + 1 < Global.maxChunkSize && currentChunk.blocks2[posX, posZ + 1].isFloor == false)
                         AddVertsBack(x, y, z, s);
-                    }
+                    else if(posZ + 1 == Global.maxChunkSize && surroundingChunks[3] == null)
+                        AddVertsBack(x, y, z, s);
+                    else if((posZ + 1 == Global.maxChunkSize && surroundingChunks[3] != null && Global.GetChunk(chunkPosX, chunkPosZ + 1).blocks2[posX, 0].isFloor == false))
+                        AddVertsBack(x, y, z, s);
                 }
             }
         }

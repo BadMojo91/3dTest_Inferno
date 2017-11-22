@@ -9,6 +9,8 @@ namespace Inferno {
         public Global.Compass CurrentDirection {
             get { return currentDirection; }
         }
+        public float interactDelay;
+        private float iDelayTime;
         public bool lockMouse;
         public float health = 100;
         public float armor = 0;
@@ -32,6 +34,8 @@ namespace Inferno {
             targetPosition = new Vector3(Mathf.Round(transform.position.x), 0, Mathf.Round(transform.position.z)); //Start position rounded to grid
         }
         private void Update() {
+            if(iDelayTime < interactDelay)
+                iDelayTime += Time.deltaTime;
             PlayerUpdate();
 
             if(Input.GetKeyDown(KeyCode.Tab)) {
@@ -67,6 +71,7 @@ namespace Inferno {
         }
         
         private void PlayerUpdate() {
+
             currentPosition = Global.RoundVector3(transform.position);
             if(lockMouse) {
                 Cursor.lockState = CursorLockMode.Locked;
@@ -128,7 +133,7 @@ namespace Inferno {
                 transform.position = Vector3.MoveTowards(transform.position,tempPos, Time.deltaTime * accelleration);
 #elif UNITY_STANDALONE || UNITY_WEBPLAYER
                 if(Input.GetButtonDown("Fire1"))
-                    Interact(true);
+                    Interact();
                 moveSpeed += Input.GetAxis("Vertical") * Time.deltaTime * accelleration;
 
                 if(Input.GetButtonDown("Left"))
@@ -150,8 +155,10 @@ namespace Inferno {
             }
             //2.5d WOLF
             if(Global.GameType == 3) {
-                if(Input.GetButton("Fire1"))
-                    Interact(true);
+                if(Input.GetButton("Fire1") && iDelayTime >= interactDelay) {
+                    Interact();
+                    iDelayTime = 0f;
+                }
                 GB3DMovement.MoveUpdate(transform, maxMoveSpeed, turnSpeed);
             }
             //3d
@@ -160,18 +167,9 @@ namespace Inferno {
             if(Global.GameType == 5) { }
         }
 
+      
+
         public void Interact() {
-            Collider[] colliders;
-            if((colliders = Physics.OverlapSphere(currentPosition + transform.TransformDirection(Vector3.forward), 0.5f)).Length > 1){
-                foreach(Collider col in colliders) {
-                    if(col.GetComponent<Inventory>()) {
-
-                    }
-                }
-            }
-        }
-
-        public void Interact(bool removeBlock) {
             if(!Global.uiActive) {
                 RaycastHit hit;
                 Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -205,7 +203,14 @@ namespace Inferno {
                         //Debug.Log(x + "," + z);
                        // Debug.DrawLine(transform.position, new Vector3(x, 0, z), Color.red, 5);
                         if(x >= 0 && x < Global.maxChunkSize && z >= 0 && z < Global.maxChunkSize)
-                            hit.collider.GetComponent<MeshBuilder>().SetBlock(x, z, removeBlock);
+                            hit.collider.GetComponent<MeshBuilder>().SetBlock(x, z, true);
+
+                        WorldGen.ChunkUpdate(hit.collider.GetComponent<MeshBuilder>());
+                        for(int i = 0; i < 4; i++) {
+                            if(hit.collider.GetComponent<MeshBuilder>().surroundingChunks[i] != null)
+                            WorldGen.ChunkUpdate(hit.collider.GetComponent<MeshBuilder>().surroundingChunks[i].GetComponent<MeshBuilder>());
+                        }
+                        
                     }
                 }
             }

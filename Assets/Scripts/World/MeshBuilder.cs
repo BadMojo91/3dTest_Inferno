@@ -167,10 +167,11 @@ namespace Inferno{
         /// <param name="z">position z</param>
         /// <param name="s">Submesh for each face (up, down, left, right, front, back)</param> 
         public void SetBlock(int x, int z, bool v) {
+            currentChunk = Global.GetChunk(chunkPosX, chunkPosZ);
             currentChunk.blocks2[x, z].isFloor = v;
             currentChunk.blocks2 = Global.SecondPass(seed, currentChunk.blocks2);
-            BuildMesh();
-            UpdateMesh();
+            //BuildMesh();
+            //UpdateMesh();
 
         }
 

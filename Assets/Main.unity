@@ -14,10 +14,10 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 8
-  m_Fog: 0
-  m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  m_Fog: 1
+  m_FogColor: {r: 0.30947235, g: 0.7210745, b: 0.7794118, a: 1}
   m_FogMode: 3
-  m_FogDensity: 0.01
+  m_FogDensity: 0.07
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
   m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
@@ -37,7 +37,7 @@ RenderSettings:
   m_ReflectionBounces: 1
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
-  m_Sun: {fileID: 0}
+  m_Sun: {fileID: 1166660594}
   m_IndirectSpecularColor: {r: 0.28138927, g: 0.26369205, b: 0.20916954, a: 1}
 --- !u!157 &3
 LightmapSettings:
@@ -125,6 +125,7 @@ GameObject:
   - component: {fileID: 93300391}
   - component: {fileID: 93300395}
   - component: {fileID: 93300396}
+  - component: {fileID: 93300397}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -164,7 +165,7 @@ Camera:
     height: 1
   near clip plane: 0.03
   far clip plane: 1000
-  field of view: 60
+  field of view: 90.6
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -175,10 +176,10 @@ Camera:
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
   m_TargetEye: 3
-  m_HDR: 1
-  m_AllowMSAA: 1
+  m_HDR: 0
+  m_AllowMSAA: 0
   m_ForceIntoRT: 1
-  m_OcclusionCulling: 1
+  m_OcclusionCulling: 0
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
 --- !u!4 &93300394
@@ -286,6 +287,38 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 0
+--- !u!215 &93300397
+ReflectionProbe:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 93300390}
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Type: 0
+  m_Mode: 1
+  m_RefreshMode: 1
+  m_TimeSlicingMode: 0
+  m_Resolution: 128
+  m_UpdateFrequency: 0
+  m_BoxSize: {x: 10, y: 10, z: 10}
+  m_BoxOffset: {x: 0, y: 0, z: 0}
+  m_NearClip: 0.3
+  m_FarClip: 1000
+  m_ShadowDistance: 100
+  m_ClearFlags: 1
+  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IntensityMultiplier: 1
+  m_BlendDistance: 1
+  m_HDR: 1
+  m_BoxProjection: 0
+  m_RenderDynamicObjects: 0
+  m_UseOcclusionCulling: 1
+  m_Importance: 1
+  m_CustomBakedTexture: {fileID: 0}
 --- !u!1 &258631907
 GameObject:
   m_ObjectHideFlags: 0
@@ -591,10 +624,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96dd229466dea0340b9411a7d4f7d709, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lockMouse: 0
+  interactDelay: 0.01
+  lockMouse: 1
   health: 0
   armor: 0
-  maxMoveSpeed: 5
+  maxMoveSpeed: 6
   accelleration: 5
   turnSpeed: 3
   currentPosition: {x: 0, y: 0, z: 0}
@@ -728,8 +762,8 @@ MonoBehaviour:
   chunkPool: []
   viewDistance: 10
   seed:
-  - frequency: 0.29
-    amplitude: 2.8
+  - frequency: 0.11
+    amplitude: 5.03
     octave: 0
     reigons:
     - subMeshes: 0a0000000a0000000a0000000a0000000a0000000a000000

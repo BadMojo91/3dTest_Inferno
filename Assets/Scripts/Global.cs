@@ -7,7 +7,7 @@ namespace Inferno {
         //Global statics
         public static GameObject inventoryViewPrefab;
         public static GameObject pickupPrefab;
-        public static int maxChunkSize = 32;
+        public static int maxChunkSize = 16;
         public static Material[] materials;
         public enum Compass { North, South, East, West };
         public static List<Chunk> chunks;
@@ -155,7 +155,7 @@ namespace Inferno {
             //First pass
             for(int z = 0; z < maxChunkSize; z++) {
                 for(int x = 0; x < maxChunkSize; x++) {
-                    float perlin = Mathf.PerlinNoise(x * seed.frequency + offSetX, z * seed.frequency + offSetZ) * seed.amplitude + seed.octave;
+                    float perlin = Mathf.PerlinNoise(x + offSetX * seed.frequency, z + offSetZ * seed.frequency) * seed.amplitude + seed.octave;
                     blocks[x, z] = new Block(x, 0, z, CubeMaterial(0, 1, 2, 3, 4, 5));
                     blocks[x, z].isFloor = perlin > seed.reigons[0].level ? true : false;
 

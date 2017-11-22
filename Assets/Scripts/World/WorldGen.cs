@@ -9,11 +9,29 @@ namespace Inferno {
         private List<GameObject> lootPool = new List<GameObject>();
         public int viewDistance = 10;
         public WorldSeed[] seed;
-       
-        
+        const float CTICK = 0.01f;
+        float chunkTick;
+        int iterator = 0;
         public void Start() { 
-            Global.SetChunks(5, seed[0]);
-            LoadChunks(transform.position, 2);
+
+            Global.SetChunks(30, seed[0]);
+            LoadChunks(transform.position, 10);
+        }
+        public static void ChunkUpdate(MeshBuilder meshBuilder) {
+            meshBuilder.BuildMesh();
+            meshBuilder.UpdateMesh();
+        }
+        public void Update() {
+            //chunkTick -= Time.deltaTime;
+            //if(iterator >= chunkPool.Count)
+            //    iterator = 0;
+
+            //while(chunkTick <= 0) {
+            //   // ChunkUpdate(chunkPool[iterator].GetComponent<MeshBuilder>());
+            //    chunkTick = CTICK;
+            //    iterator++;
+            //}
+            
         }
         public void LoadChunks(Vector3 centerPos, int dist) {
             for(int z = 0; z < dist; z++) {

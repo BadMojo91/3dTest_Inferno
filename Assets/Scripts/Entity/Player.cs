@@ -3,7 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Inferno {
+    [System.Serializable]
+    public class PlayerInfo {
+        public LightDetector lightDetector;
+        public bool stealthEnabled;
+        public float lightRange;
+        public float health = 100;
+        public float armor = 0;
+    }
     public class Player : MonoBehaviour {
+        public PlayerInfo playerInfo;
         private Global.Compass currentDirection;
         private Inventory inventory;
         public Global.Compass CurrentDirection {
@@ -12,8 +21,7 @@ namespace Inferno {
         public float interactDelay;
         private float iDelayTime;
         public bool lockMouse;
-        public float health = 100;
-        public float armor = 0;
+       
         private float moveSpeed;
         public float MoveSpeed{
             get { return moveSpeed; }
@@ -27,6 +35,19 @@ namespace Inferno {
         private Vector3 targetPosition;
         public Vector3 currentPosition;
         Vector3 tempPos;
+
+        private void OnGUI() {
+
+            GUI.BeginGroup(new Rect(Screen.width/2-(64/2), Screen.height - 64, 64, 64));
+
+            GUI.Box(new Rect(0.5f, 0, 64, 64), playerInfo.lightDetector.lightMeter);
+
+           
+
+            GUI.EndGroup();
+        
+        }
+
         private void Awake() {
             inventory = GetComponent<Inventory>();
         }
@@ -34,6 +55,9 @@ namespace Inferno {
             targetPosition = new Vector3(Mathf.Round(transform.position.x), 0, Mathf.Round(transform.position.z)); //Start position rounded to grid
         }
         private void Update() {
+            if(playerInfo.stealthEnabled)
+                playerInfo.lightRange = playerInfo.lightDetector.currentLightRange;
+
             if(iDelayTime < interactDelay)
                 iDelayTime += Time.deltaTime;
             PlayerUpdate();

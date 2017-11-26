@@ -3,12 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Inferno {
-
-    public struct BlockReturn {
-        public int x, y, z;
-        public int chunkIndex;
-    }
-
     [System.Serializable]
     public class PlayerInfo {
         public LightDetector lightDetector;
@@ -18,7 +12,6 @@ namespace Inferno {
         public float armor = 0;
     }
     public class Player : MonoBehaviour {
-        public static BlockReturn blockReturn;
         public PlayerInfo playerInfo;
         private Global.Compass currentDirection;
         private Inventory inventory;
@@ -28,9 +21,9 @@ namespace Inferno {
         public float interactDelay;
         private float iDelayTime;
         public bool lockMouse;
-
+       
         private float moveSpeed;
-        public float MoveSpeed {
+        public float MoveSpeed{
             get { return moveSpeed; }
             set { moveSpeed = value; }
         }
@@ -46,7 +39,7 @@ namespace Inferno {
 
         private void OnGUI() {
             //Show light meter
-            GUI.BeginGroup(new Rect(Screen.width / 2 - (64 / 2), Screen.height - 64, 64, 64));
+            GUI.BeginGroup(new Rect(Screen.width/2-(64/2), Screen.height - 64, 64, 64));
             GUI.Box(new Rect(0.5f, 0, 64, 64), playerInfo.lightDetector.lightMeter);
             GUI.EndGroup();
 
@@ -97,7 +90,7 @@ namespace Inferno {
             //Platform WITH/G
             if(Global.GameType == 1) { }
             //2.5d HYPER
-            if(Global.GameType == 2) {
+            if(Global.GameType == 2) {   
             }
             //2.5d WOLF
             if(Global.GameType == 3) { }
@@ -106,9 +99,9 @@ namespace Inferno {
             //flight
             if(Global.GameType == 5) { }
         }
-
+        
         private void PlayerUpdate() {
-
+            
 
             //Set current posistion on grid
             currentPosition = Global.RoundVector3(transform.position);
@@ -208,7 +201,7 @@ namespace Inferno {
                 targetPosition = Global.RoundVector3(transform.position) + transform.TransformDirection(Vector3.forward);
                 if(moveSpeed > maxMoveSpeed)
                     moveSpeed = maxMoveSpeed;
-                GB2DMovement.MoveUpdate(transform, moveSpeed, targetPosition, true);
+                  GB2DMovement.MoveUpdate(transform, moveSpeed, targetPosition, true);
 #endif
 
 
@@ -222,8 +215,7 @@ namespace Inferno {
                     Interact();
                     iDelayTime = 0f;
                 }
-                if(lockMouse)
-                    GB3DMovement.MoveUpdate(transform, maxMoveSpeed, turnSpeed);
+                GB3DMovement.MoveUpdate(transform, maxMoveSpeed, turnSpeed);
             }
             //3d
             if(Global.GameType == 4) { }
@@ -231,80 +223,52 @@ namespace Inferno {
             if(Global.GameType == 5) { }
         }
 
-        public void DestroyBlock() {
-            if(GetBlock().collider != null) {
-            MeshBuilder meshBuilder = GetBlock().collider.gameObject.GetComponent<MeshBuilder>();
-            //if(meshBuilder != null) {
-                Global.chunks[blockReturn.chunkIndex].blocks[blockReturn.x, blockReturn.z].isFloor = true;
+      
 
-                meshBuilder.BuildMesh();
-                meshBuilder.UpdateMesh();
-                //WorldGen.UpdateAllChunks();
-                Debug.Log(Global.chunks[blockReturn.chunkIndex].blocks[blockReturn.x, blockReturn.z].isFloor);
-            }
-            // }
-        }
-
-        public RaycastHit GetBlock() {
-            RaycastHit hit;
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-
-            if(Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward), out hit)) {
-                if(hit.collider.tag == "World") {
-
-                    Vector3 hitPoint = hit.point + hit.normal * -0.5f;
-                    hitPoint.y = 0;
-                    //Debug.Log(hitPoint);
-                    int cPosX = 0;
-                    int cPosZ = 0;
-                    int x = Mathf.FloorToInt(hitPoint.x + 0.5f);
-                    int z = Mathf.FloorToInt(hitPoint.z + 0.5f);
-                    //Debug.DrawLine(currentPosition, new Vector3(x, 0, z), Color.red, 5);
-                    while(x >= Global.maxChunkSize) {
-                        x -= Global.maxChunkSize;
-                        cPosX += 1;
-                    }
-                    while(x <= -Global.maxChunkSize) {
-                        x += Global.maxChunkSize;
-                        cPosX -= 1;
-                    }
-                    while(z >= Global.maxChunkSize) {
-                        z -= Global.maxChunkSize;
-                        cPosZ += 1;
-                    }
-                    while(z <= -Global.maxChunkSize) {
-                        z += Global.maxChunkSize;
-                        cPosZ -= 1;
-                    }
-                    //Debug.Log(hit.collider.gameObject.name + x + "," + z);
-
-                    if(x >= 0 && x < Global.maxChunkSize && z >= 0 && z < Global.maxChunkSize) {
-                        BlockReturn r = new BlockReturn();
-                        r.chunkIndex = Global.GetChunkIndex(cPosX, cPosZ);
-                        r.x = x;
-                        r.z = z;
-                        r.y = 0;
-                        blockReturn = r;
-                        
-                    }
-
-
-
-                    //WorldGen.ChunkUpdate(hit.collider.GetComponent<MeshBuilder>());
-                    //for(int i = 0; i < 4; i++) {
-                    //    if(hit.collider.GetComponent<MeshBuilder>().surroundingChunks[i] != null)
-                    //        WorldGen.ChunkUpdate(hit.collider.GetComponent<MeshBuilder>().surroundingChunks[i].GetComponent<MeshBuilder>());
-                    //}
-
-                }
-            }
-
-            return hit;
-
-        }
         public void Interact() {
             if(!Global.uiActive) {
-                DestroyBlock();
+                RaycastHit hit;
+                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+                if(Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward), out hit)) {
+                    if(hit.collider.tag == "World") {
+                        Vector3 hitPoint = hit.point + hit.normal * -0.5f;
+                        hitPoint.y = 0;
+                        //Debug.Log(hitPoint);
+                        int cPosX = 0;
+                        int cPosZ = 0;
+                        int x = Mathf.FloorToInt(hitPoint.x + 0.5f);
+                        int z = Mathf.FloorToInt(hitPoint.z + 0.5f);
+                        Debug.DrawLine(currentPosition, new Vector3(x,0,z), Color.red, 5);
+                        while(x >= Global.maxChunkSize) {
+                            x -= Global.maxChunkSize;
+                            cPosX += 1;
+                        }
+                        while(x <= -Global.maxChunkSize) {
+                            x += Global.maxChunkSize;
+                            cPosX -= 1;
+                        }
+                        while(z >= Global.maxChunkSize) {
+                            z -= Global.maxChunkSize;
+                            cPosZ += 1;
+                        }
+                        while(z <= -Global.maxChunkSize) {
+                            z += Global.maxChunkSize;
+                            cPosZ -= 1;
+                        }
+                        Debug.Log(hit.collider.gameObject.name + x + "," + z);
+                       
+                       if(x >= 0 && x < Global.maxChunkSize && z >= 0 && z < Global.maxChunkSize)
+                        hit.collider.GetComponent<MeshBuilder>().SetBlock(x, z, true);
+
+                        WorldGen.ChunkUpdate(hit.collider.GetComponent<MeshBuilder>());
+                        for(int i = 0; i < 4; i++) {
+                            if(hit.collider.GetComponent<MeshBuilder>().surroundingChunks[i] != null)
+                            WorldGen.ChunkUpdate(hit.collider.GetComponent<MeshBuilder>().surroundingChunks[i].GetComponent<MeshBuilder>());
+                        }
+                        
+                    }
+                }
             }
         }
         public void Look() {
@@ -327,7 +291,7 @@ namespace Inferno {
     }
 
 
-
+    
 
 
 }

@@ -5,8 +5,6 @@ namespace Inferno {
     [System.Serializable]
     public class Global {
         //Global statics
-        public static WorldGen worldGen;
-        public static string worldName;
         public static GameObject inventoryViewPrefab;
         public static GameObject pickupPrefab;
         public static int maxChunkSize = 16;
@@ -63,7 +61,7 @@ namespace Inferno {
                     Texture2D normalMap = null;
                     normalMap = (Texture2D)Resources.Load("Flats/" + tex.name + "_n", typeof(Texture2D));
                     if(normalMap) {
-
+                        
                         //Debug.Log("Normal Map Found: " + normalMap);
                         mat.SetTexture("_BumpMap", normalMap);
                         mat.EnableKeyword("_NORMALMAP");
@@ -158,10 +156,10 @@ namespace Inferno {
             for(int z = 0; z < maxChunkSize; z++) {
                 for(int x = 0; x < maxChunkSize; x++) {
                     float perlin = Mathf.PerlinNoise(x + offSetX * seed.frequency, z + offSetZ * seed.frequency) * seed.amplitude + seed.octave;
-                    blocks[x, z] = new Block(x, 0, z, 0, 1, 2, 3, 4, 5);
+                    blocks[x, z] = new Block(x, 0, z, 0,1,2,3,4,5);
                     blocks[x, z].isFloor = perlin > seed.reigons[0].level ? true : false;
 
-
+                    
 
                 }
             }
@@ -176,7 +174,7 @@ namespace Inferno {
                 for(int x = 0; x < maxChunkSize; x++) {
                     if(!bl[x, z].isFloor) {
                         int[] s = seed.reigons[0].subMeshes;
-                        // bl = SetSurroundingBlocks(bl, x, z, s[2], s[3], s[4], s[5]);
+                       // bl = SetSurroundingBlocks(bl, x, z, s[2], s[3], s[4], s[5]);
                     }
                 }
             }
@@ -188,25 +186,16 @@ namespace Inferno {
             Global.chunks.Clear();
             for(int x = -count; x < count; x++) {
                 for(int z = -count; z < count; z++) {
-                    Chunk newChunk = new Chunk(RandomizeChunk(seed, x, z));
+                    Chunk newChunk = new Chunk(RandomizeChunk(seed,x,z));
                     newChunk.x = x;
                     newChunk.z = z;
                     chunks.Add(newChunk);
-                    //chunks[x, z].blocks = RandomizeChunk(seed);
+                    //chunks[x, z].blocks2 = RandomizeChunk(seed);
                 }
             }
+           
+        }
 
-        }
-        public static int GetChunkIndex(int posX, int posZ) {
-            for(int i = 0; i < chunks.Count; i++) {
-                if(chunks[i].x == posX && chunks[i].z == posZ) {
-                    Debug.Log(i);
-                    return i;
-                }
-            }
-            Debug.Log("Chunk" + posX + "," + posZ + " Isn't in Global.chunks list");
-            return -1;
-        }
         public static Chunk GetChunk(int posX, int posZ) {
             Chunk c = null;
 
@@ -216,14 +205,11 @@ namespace Inferno {
                     break;
                 }
             }
-            c = IOChunks.LoadChunk(worldGen.worldName, "Chunk_" + posX + "," + posZ);
-            if(c == null) {
-                Debug.Log("No Chunk Found, Creating new one at:" + posX + " " + posZ);
-                c = new Chunk(posX, posZ, RandomizeChunk(worldGen.seed, posX, posZ));
-            }
+            if(c == null)
+                Debug.LogError("No Chunk Found" + posX + " " + posZ);
 
             return c;
         }
     }
-
+    
 }

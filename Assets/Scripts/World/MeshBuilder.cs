@@ -7,7 +7,6 @@ namespace Inferno{
     public class MeshBuilder : MonoBehaviour {
         //public Block[,] blocks = new Block[Global.maxChunkSize,Global.maxChunkSize];
         public Chunk currentChunk;
-        public int chunkIndex;
         private SubMeshData[] subMeshes;
         public MeshFilter meshFilter;
         public MeshRenderer meshRenderer;
@@ -47,18 +46,20 @@ namespace Inferno{
         /// Loads chunk in path string name
         /// </summary>
         /// <param name="name"></param>
-        public void LoadChunk(string worldName, string name) {
-            currentChunk = IOChunks.LoadChunk(worldName,name);
+        public void LoadChunk(string name) {
+            Block[,] b;
+            b = IOChunks.LoadChunk(name);
+            currentChunk.blocks2 = b;
+            //Debug.Log(blocks[0, 0].isFloor);
         }
 
         /// <summary>
         /// Converts chunk to binary friendly and saves to folder of string name
         /// </summary>
         /// <param name="name"></param>
-        public void SaveChunk() {
-            currentChunk.x = chunkPosX;
-            currentChunk.z = chunkPosZ;
-            IOChunks.SaveChunk(ConvertToSerializableChunk(currentChunk.blocks), Global.worldName, transform.name);
+        public void SaveChunk(string name) {
+            //currentChunk = ConvertToChunk(currentChunk.blocks2);
+            IOChunks.SaveChunk(currentChunk, name);
         }
 
         /// <summary>
@@ -69,8 +70,7 @@ namespace Inferno{
             //StartCoroutine(Global.GatherMaterials()); //gathers materials for mesh renderer
             //init submeshes
             //====================================================
-            chunkIndex = Global.GetChunkIndex(chunkPosX, chunkPosZ);
-            currentChunk = Global.chunks[chunkIndex];
+            currentChunk = Global.GetChunk(chunkPosX, chunkPosZ);
         }
         
         /// <summary>
@@ -132,7 +132,7 @@ namespace Inferno{
         /// <param name="z"></param>
         public void RemoveAt(int x, int z) {
             if(x < Global.maxChunkSize && x >= 0 && z < Global.maxChunkSize && z >= 0) 
-            currentChunk.blocks[x, z].isFloor = true;
+            currentChunk.blocks2[x, z].isFloor = true;
    
             BuildMesh();
             UpdateMesh();
@@ -167,14 +167,11 @@ namespace Inferno{
         /// <param name="z">position z</param>
         /// <param name="s">Submesh for each face (up, down, left, right, front, back)</param> 
         public void SetBlock(int x, int z, bool v) {
-            int index = Global.GetChunkIndex(chunkPosX, chunkPosZ);
-           
-            Global.chunks[index].blocks[x, z].isFloor = v;
-
-
-            currentChunk = Global.chunks[index];
-            BuildMesh();
-            UpdateMesh();
+            currentChunk = Global.GetChunk(chunkPosX, chunkPosZ);
+            currentChunk.blocks2[x, z].isFloor = v;
+            currentChunk.blocks2 = Global.SecondPass(seed, currentChunk.blocks2);
+            //BuildMesh();
+            //UpdateMesh();
 
         }
 
@@ -194,22 +191,22 @@ namespace Inferno{
             int tex = 0;
             switch(texture) {
                 case "north":
-                    tex = c.blocks[x, z].north;
+                    tex = c.blocks2[x, z].north;
                     break;
                 case "south":
-                    tex = c.blocks[x, z].south;
+                    tex = c.blocks2[x, z].south;
                     break;
                 case "east":
-                    tex = c.blocks[x, z].east;
+                    tex = c.blocks2[x, z].east;
                     break;
                 case "west":
-                    tex = c.blocks[x, z].west;
+                    tex = c.blocks2[x, z].west;
                     break;
                 case "floor":
-                    tex = c.blocks[x, z].floor;
+                    tex = c.blocks2[x, z].floor;
                     break;
                 case "ceiling":
-                    tex = c.blocks[x, z].ceiling;
+                    tex = c.blocks2[x, z].ceiling;
                     break;
                 default:
                     tex = 0;
@@ -226,9 +223,12 @@ namespace Inferno{
             for(int i = 0; i < subMeshes.Length; i++) {
                 subMeshes[i].triangles = new List<int>();
             }
+            //Debug.Log(chunkPosX + " " + chunkPosZ);
+            //currentChunk = Global.GetChunk(chunkPosX, chunkPosZ);
             for(int z = 0; z < Global.maxChunkSize; z++) {
                 for(int x = 0; x < Global.maxChunkSize; x++) {
-                    if(currentChunk.blocks[x, z].isFloor)
+                    //Debug.Log(currentChunk.blocks2[x,z].subMesh.Length);
+                    if(currentChunk.blocks2[x, z].isFloor)
                         CreateFloor(x, 0, z, GetTex(x, z, "floor"), GetTex(x,z,"ceiling"));
                     else
                         CreateCube(x, 0, z, GetTex(x,z,"north"), GetTex(x, z, "south"), GetTex(x, z, "east"), GetTex(x, z, "west"));
@@ -239,7 +239,6 @@ namespace Inferno{
         /// Updates mesh, run after BuildMesh.
         /// </summary>
         public void UpdateMesh() {
-            Debug.Log("Updating mesh: " + chunkPosX + " " + chunkPosZ);
             if(vertices == null || colVertices == null)
                 return;
             Mesh mesh = new Mesh();
@@ -281,7 +280,7 @@ namespace Inferno{
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
-        SavedChunk ConvertToSerializableChunk(Block[,] c) {
+        Chunk ConvertToChunk(Block[,] c) {
             Block[] _chunk = new Block[Global.maxChunkSize * Global.maxChunkSize];
             int i = 0;
             for(int z = 0; z < c.GetLength(1); z++) {
@@ -289,7 +288,7 @@ namespace Inferno{
                     _chunk[i] = c[x, z];
                 }
             }
-            SavedChunk newChunk = new SavedChunk(chunkPosX, chunkPosZ, _chunk);
+            Chunk newChunk = new Chunk(c);
             newChunk.blocks = _chunk;
             return newChunk;
         }
@@ -331,7 +330,7 @@ namespace Inferno{
         private void AddVerts(float x, float y, float z, int s, CubeFace face) {
             int posX = (int)x;
             int posZ = (int)z;
-            if(currentChunk.blocks[posX, posZ].damage <= 0)
+            if(currentChunk.blocks2[posX, posZ].damage <= 0)
                 return;
            // GameObject c = null;
             x -= 0.5f; //sets the offsets here, better that way.
@@ -359,7 +358,7 @@ namespace Inferno{
                     break;
             }
 
-            //if(currentChunk.blocks[posX, posZ].isFloor) {
+            //if(currentChunk.blocks2[posX, posZ].isFloor) {
             //    if(face == CubeFace.up) {
             //        AddVertsUp(x, y, z, s);
             //    }
@@ -367,36 +366,36 @@ namespace Inferno{
             //        AddVertsDown(x, y, z, s);
             //    }
             //    else if(face == CubeFace.left) {
-            //        if(posX - 1 >= 0 && currentChunk.blocks[posX - 1, posZ].isFloor == false)
+            //        if(posX - 1 >= 0 && currentChunk.blocks2[posX - 1, posZ].isFloor == false)
             //            AddVertsLeft(x, y, z, s);
             //        else if (posX - 1 < 0 && surroundingChunks[0] == null)
             //            AddVertsLeft(x, y, z, s);
-            //        else if (posX - 1 < 0 && surroundingChunks[0] != null && Global.GetChunk(chunkPosX - 1, chunkPosZ).blocks[Global.maxChunkSize - 1,posZ].isFloor == false)
+            //        else if (posX - 1 < 0 && surroundingChunks[0] != null && Global.GetChunk(chunkPosX - 1, chunkPosZ).blocks2[Global.maxChunkSize - 1,posZ].isFloor == false)
             //            AddVertsLeft(x, y, z, s); 
             //    }
             //    else if(face == CubeFace.right) {
-            //        if(posX + 1 < Global.maxChunkSize && currentChunk.blocks[posX + 1, posZ].isFloor == false)
+            //        if(posX + 1 < Global.maxChunkSize && currentChunk.blocks2[posX + 1, posZ].isFloor == false)
             //            AddVertsRight(x, y, z, s);
             //        else if (posX + 1 == Global.maxChunkSize && surroundingChunks[1] == null)
             //            AddVertsRight(x, y, z, s);
-            //        else if(surroundingChunks[1] != null && posX + 1 == Global.maxChunkSize && Global.GetChunk(chunkPosX + 1, chunkPosZ).blocks[0, posZ].isFloor == false)
+            //        else if(surroundingChunks[1] != null && posX + 1 == Global.maxChunkSize && Global.GetChunk(chunkPosX + 1, chunkPosZ).blocks2[0, posZ].isFloor == false)
             //            AddVertsRight(x, y, z, s);
                     
             //    }
             //    else if(face == CubeFace.front) {
-            //        if(posZ - 1 >= 0 && currentChunk.blocks[posX, posZ - 1].isFloor == false)
+            //        if(posZ - 1 >= 0 && currentChunk.blocks2[posX, posZ - 1].isFloor == false)
             //            AddVertsFront(x, y, z, s);
             //        else if (posZ - 1 < 0 && surroundingChunks[2] == null)
             //            AddVertsFront(x, y, z, s);
-            //        else if (surroundingChunks[2] != null && posZ - 1 < 0 && Global.GetChunk(chunkPosX, chunkPosZ - 1).blocks[posX, Global.maxChunkSize - 1].isFloor == false)
+            //        else if (surroundingChunks[2] != null && posZ - 1 < 0 && Global.GetChunk(chunkPosX, chunkPosZ - 1).blocks2[posX, Global.maxChunkSize - 1].isFloor == false)
             //            AddVertsFront(x, y, z, s);
             //    }
             //    else if(face == CubeFace.back) {
-            //        if(posZ + 1 < Global.maxChunkSize && currentChunk.blocks[posX, posZ + 1].isFloor == false)
+            //        if(posZ + 1 < Global.maxChunkSize && currentChunk.blocks2[posX, posZ + 1].isFloor == false)
             //            AddVertsBack(x, y, z, s);
             //        else if(posZ + 1 == Global.maxChunkSize && surroundingChunks[3] == null)
             //            AddVertsBack(x, y, z, s);
-            //        else if((posZ + 1 == Global.maxChunkSize && surroundingChunks[3] != null && Global.GetChunk(chunkPosX, chunkPosZ + 1).blocks[posX, 0].isFloor == false))
+            //        else if((posZ + 1 == Global.maxChunkSize && surroundingChunks[3] != null && Global.GetChunk(chunkPosX, chunkPosZ + 1).blocks2[posX, 0].isFloor == false))
             //            AddVertsBack(x, y, z, s);
             //    }
             //}

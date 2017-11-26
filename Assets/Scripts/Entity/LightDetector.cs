@@ -6,7 +6,7 @@ namespace Inferno {
         public Texture2D currentLightTarget;
         public Texture2D lightMeter;
         public float currentLightRange;
-        public float sensitivity = 1.5f;
+        public float sensitivity = 1f;
         public int resolution;
         public int size = 32;
         public float frameTime = 0.5f;
@@ -49,13 +49,12 @@ namespace Inferno {
             RenderTexture rt = new RenderTexture(Screen.width, Screen.height, 24);
             camera.targetTexture = rt;
             currentLightTarget = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, false);
-            camera.Render();
+           // camera.Render();
             RenderTexture.active = rt;
             currentLightTarget.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
             camera.targetTexture = null;
             RenderTexture.active = null;
             Destroy(rt);
-
            currentLightTarget.Resize(resolution, resolution);
             
             LightDetectorUpdate();
@@ -78,7 +77,7 @@ namespace Inferno {
             foreach(float i in bright) {
                 sum += i;
             }
-            currentLightRange = (sum / (resolution*resolution)) * sensitivity;
+            currentLightRange = Mathf.Clamp((sum /(resolution*resolution)) * sensitivity, 0, 1);
         }
 
         private float Brightness(Color c) {

@@ -34,18 +34,19 @@ namespace Inferno {
         private Vector3 targetRotation;
         private Vector3 targetPosition;
         public Vector3 currentPosition;
+        public Vector2 currentChunk;
         Vector3 tempPos;
 
         private void OnGUI() {
-
+            //Show light meter
             GUI.BeginGroup(new Rect(Screen.width/2-(64/2), Screen.height - 64, 64, 64));
-
             GUI.Box(new Rect(0.5f, 0, 64, 64), playerInfo.lightDetector.lightMeter);
-
-           
-
             GUI.EndGroup();
-        
+
+            GUI.BeginGroup(new Rect(Screen.width - 200, 0, 200, 600));
+            GUI.Box(new Rect(0, 0, 200, 100), "Chunk X: " + currentChunk.x + " Z: " + currentChunk.y);
+            GUI.Box(new Rect(0, 10, 200, 100), "Position X: " + currentPosition.x + " Y: " + currentPosition.y + " Z: " + currentPosition.z);
+            GUI.EndGroup();
         }
 
         private void Awake() {
@@ -55,13 +56,18 @@ namespace Inferno {
             targetPosition = new Vector3(Mathf.Round(transform.position.x), 0, Mathf.Round(transform.position.z)); //Start position rounded to grid
         }
         private void Update() {
+            //enable light meter
             if(playerInfo.stealthEnabled)
                 playerInfo.lightRange = playerInfo.lightDetector.currentLightRange;
 
+            //Interact delay
             if(iDelayTime < interactDelay)
                 iDelayTime += Time.deltaTime;
+
+            //Player main update
             PlayerUpdate();
 
+            //Show inventory menu
             if(Input.GetKeyDown(KeyCode.Tab)) {
                 if(Global.activeUi) {
                     Destroy(Global.activeUi);
@@ -95,8 +101,32 @@ namespace Inferno {
         }
         
         private void PlayerUpdate() {
+            
 
+            //Set current posistion on grid
             currentPosition = Global.RoundVector3(transform.position);
+            //Set current chunk
+            int px = (int)currentPosition.x, pz = (int)currentPosition.z;
+            int cx = 0, cz = 0;
+            while(px > Global.maxChunkSize) {
+                px -= Global.maxChunkSize;
+                cx++;
+            }
+            while(px < -Global.maxChunkSize) {
+                px += Global.maxChunkSize;
+                cx--;
+            }
+            while(pz > Global.maxChunkSize) {
+                pz -= Global.maxChunkSize;
+                cz++;
+            }
+            while(pz < -Global.maxChunkSize) {
+                pz += Global.maxChunkSize;
+                cz--;
+            }
+            currentChunk = new Vector2(cx, cz);
+
+            //Mouse cursor state
             if(lockMouse) {
                 Cursor.lockState = CursorLockMode.Locked;
             }
@@ -109,14 +139,16 @@ namespace Inferno {
                 else
                     lockMouse = true;
             }
+
+            //Game mode dependant stuff
+            //==========================
             //Platform NO/G
             if(Global.GameType == 0) { }
             //Platform WITH/G
             if(Global.GameType == 1) { }
             //2.5d HYPER
             if(Global.GameType == 2) {
-                int tDir = 0;//turn direction
-                
+                int tDir = 0;// temp turn direction
 
 #if UNITY_IOS || UNITY_ANDROID || UNITY_WP8 || UNITY_IPHONE
 
@@ -207,7 +239,7 @@ namespace Inferno {
                         int cPosZ = 0;
                         int x = Mathf.FloorToInt(hitPoint.x + 0.5f);
                         int z = Mathf.FloorToInt(hitPoint.z + 0.5f);
-
+                        Debug.DrawLine(currentPosition, new Vector3(x,0,z), Color.red, 5);
                         while(x >= Global.maxChunkSize) {
                             x -= Global.maxChunkSize;
                             cPosX += 1;
@@ -224,10 +256,10 @@ namespace Inferno {
                             z += Global.maxChunkSize;
                             cPosZ -= 1;
                         }
-                        //Debug.Log(x + "," + z);
-                       // Debug.DrawLine(transform.position, new Vector3(x, 0, z), Color.red, 5);
-                        if(x >= 0 && x < Global.maxChunkSize && z >= 0 && z < Global.maxChunkSize)
-                            hit.collider.GetComponent<MeshBuilder>().SetBlock(x, z, true);
+                        Debug.Log(hit.collider.gameObject.name + x + "," + z);
+                       
+                       if(x >= 0 && x < Global.maxChunkSize && z >= 0 && z < Global.maxChunkSize)
+                        hit.collider.GetComponent<MeshBuilder>().SetBlock(x, z, true);
 
                         WorldGen.ChunkUpdate(hit.collider.GetComponent<MeshBuilder>());
                         for(int i = 0; i < 4; i++) {

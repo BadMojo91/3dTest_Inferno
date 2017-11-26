@@ -130,33 +130,33 @@ namespace Inferno {
 
             return cMat;
         }
-        public static Block[,] SetSurroundingBlocks(Block[,] blocks, int x, int z, int left, int right, int front, int back) {
-            Block[,] bl = blocks;
-            if(x + 1 < Global.maxChunkSize && bl[x + 1, z].isFloor) {
-                int[] sub = bl[x + 1, z].subMesh;
-                bl[x + 1, z].subMesh = CubeMaterial(sub[0], sub[1], left, sub[3], sub[4], sub[5]);
-            }
-            if(x - 1 >= 0 && bl[x - 1, z].isFloor) {
-                int[] sub = bl[x - 1, z].subMesh;
-                bl[x - 1, z].subMesh = CubeMaterial(sub[0], sub[1], sub[2], right, sub[4], sub[5]);
-            }
-            if(z + 1 < Global.maxChunkSize && bl[x, z + 1].isFloor) {
-                int[] sub = bl[x, z + 1].subMesh;
-                bl[x, z + 1].subMesh = CubeMaterial(sub[0], sub[1], sub[2], sub[3], front, sub[5]);
-            }
-            if(z - 1 >= 0 && bl[x, z - 1].isFloor) {
-                int[] sub = bl[x, z - 1].subMesh;
-                bl[x, z - 1].subMesh = CubeMaterial(sub[0], sub[1], sub[2], sub[3], sub[4], back);
-            }
-            return bl;
-        }
+        //public static Block[,] SetSurroundingBlocks(Block[,] blocks, int x, int z, int left, int right, int front, int back) {
+        //    Block[,] bl = blocks;
+        //    if(x + 1 < Global.maxChunkSize && bl[x + 1, z].isFloor) {
+        //        int[] sub = bl[x + 1, z].subMesh;
+        //        bl[x + 1, z].subMesh = CubeMaterial(sub[0], sub[1], left, sub[3], sub[4], sub[5]);
+        //    }
+        //    if(x - 1 >= 0 && bl[x - 1, z].isFloor) {
+        //        int[] sub = bl[x - 1, z].subMesh;
+        //        bl[x - 1, z].subMesh = CubeMaterial(sub[0], sub[1], sub[2], right, sub[4], sub[5]);
+        //    }
+        //    if(z + 1 < Global.maxChunkSize && bl[x, z + 1].isFloor) {
+        //        int[] sub = bl[x, z + 1].subMesh;
+        //        bl[x, z + 1].subMesh = CubeMaterial(sub[0], sub[1], sub[2], sub[3], front, sub[5]);
+        //    }
+        //    if(z - 1 >= 0 && bl[x, z - 1].isFloor) {
+        //        int[] sub = bl[x, z - 1].subMesh;
+        //        bl[x, z - 1].subMesh = CubeMaterial(sub[0], sub[1], sub[2], sub[3], sub[4], back);
+        //    }
+        //    return bl;
+        //}
         public static Block[,] RandomizeChunk(WorldSeed seed, int offSetX, int offSetZ) {
             Block[,] blocks = new Block[maxChunkSize, maxChunkSize];
             //First pass
             for(int z = 0; z < maxChunkSize; z++) {
                 for(int x = 0; x < maxChunkSize; x++) {
                     float perlin = Mathf.PerlinNoise(x + offSetX * seed.frequency, z + offSetZ * seed.frequency) * seed.amplitude + seed.octave;
-                    blocks[x, z] = new Block(x, 0, z, CubeMaterial(0, 1, 2, 3, 4, 5));
+                    blocks[x, z] = new Block(x, 0, z, 0,1,2,3,4,5);
                     blocks[x, z].isFloor = perlin > seed.reigons[0].level ? true : false;
 
                     
@@ -174,7 +174,7 @@ namespace Inferno {
                 for(int x = 0; x < maxChunkSize; x++) {
                     if(!bl[x, z].isFloor) {
                         int[] s = seed.reigons[0].subMeshes;
-                        bl = SetSurroundingBlocks(bl, x, z, s[2], s[3], s[4], s[5]);
+                       // bl = SetSurroundingBlocks(bl, x, z, s[2], s[3], s[4], s[5]);
                     }
                 }
             }

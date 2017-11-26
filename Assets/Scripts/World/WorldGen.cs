@@ -14,8 +14,8 @@ namespace Inferno {
         int iterator = 0;
         public void Start() { 
 
-            Global.SetChunks(30, seed[0]);
-            LoadChunks(transform.position, 10);
+            Global.SetChunks(5, seed[0]);
+            LoadChunks(transform.position, 5);
         }
         public static void ChunkUpdate(MeshBuilder meshBuilder) {
             meshBuilder.BuildMesh();
